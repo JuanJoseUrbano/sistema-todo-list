@@ -8,79 +8,99 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class TaskService {
+
     @Autowired
-    TaskRepository taskRepository;
+    private TaskRepository taskRepository;
 
-    public List<Task> getTask() {
-        return (List<Task>) taskRepository.findAll();
+    public ResponseEntity<List<Task>> getAllTasks() {
+        List<Task> tasks = (List<Task>) taskRepository.findAll();
+        if (tasks.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(tasks);
     }
 
-    public Optional<Task> getById(Long id) {
-        return taskRepository.findById(id);
+    public ResponseEntity<Task> getById(Long id) {
+        return taskRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(null));
     }
 
-    public List<Task> getByComplete(){
-        return taskRepository.findByCompleted(true);
+    public ResponseEntity<List<Task>> getCompletedTasks() {
+        List<Task> completed = taskRepository.findByCompleted(true);
+        if (completed.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(completed);
     }
 
-    public List<Task> getTaskByTitle(String title) {
-        return taskRepository.findByTitle(title);
+    public ResponseEntity<List<Task>> getTasksByTitle(String title) {
+        List<Task> tasks = taskRepository.findByTitle(title);
+        if (tasks.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(null);
+        }
+        return ResponseEntity.ok(tasks);
     }
+    public ResponseEntity<List<Task>> getTasksByPriority(Long priorityId) {
+        List<Task> tasks = taskRepository.findByPriorityId(priorityId);
+
+        if (tasks.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(null);
+        }
+
+        return ResponseEntity.ok(tasks);
+    }
+
 
     public ResponseEntity<String> registerTask(Task task) {
-        try {
-            if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("La tarea deberia de tener un titulo");
-            }
-            if (task.getDescription() == null || task.getDescription().trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("La tarea deberia de tener una descripcion");
-            }
-            taskRepository.save(task);
-            return ResponseEntity.status(HttpStatus.CREATED).body("Tarea agregada correctamente");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No se pudo realizar la peticion");
+        if (!isValidTask(task)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("El título y la descripción son obligatorios");
         }
+
+        taskRepository.save(task);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body("Tarea agregada correctamente");
     }
 
     public ResponseEntity<String> updateTask(Long id, Task task) {
-        try {
-            Optional<Task> taskOptional = taskRepository.findById(id);
-            if (!taskOptional.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Tarea no encontrada");
-            }
-            Task existingTask = taskOptional.get();
+        return taskRepository.findById(id)
+                .map(existing -> {
+                    if (!isValidTask(task)) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body("El título y la descripción son obligatorios");
+                    }
 
-            if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("La tarea debe tener un título");
-            }
-            if (task.getDescription() == null || task.getDescription().trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("La tarea debe tener una descripción");
-            }
+                    existing.setTitle(task.getTitle());
+                    existing.setDescription(task.getDescription());
+                    existing.setCompleted(task.isCompleted());
+                    taskRepository.save(existing);
 
-            existingTask.setTitle(task.getTitle());
-            existingTask.setDescription(task.getDescription());
-            existingTask.setCompleted(task.isCompleted());
-
-            taskRepository.save(existingTask);
-
-            return ResponseEntity.ok("Tarea actualizada correctamente");
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No se pudo realizar la petición");
-        }
+                    return ResponseEntity.ok("Tarea actualizada correctamente");
+                })
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Tarea no encontrada"));
     }
 
-
-    public ResponseEntity<String> eliminarTask(Long id) {
-        Optional<Task> taskOptional = taskRepository.findById(id);
-        if (taskOptional.isPresent()) {
-            taskRepository.deleteById(id);
-            return ResponseEntity.ok("Tarea Eliminada correctamente");
+    public ResponseEntity<String> deleteTask(Long id) {
+        if (!taskRepository.existsById(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("La tarea con ID " + id + " no fue encontrada");
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("La Task con el ID " + id + " no fue encontrado");
+
+        taskRepository.deleteById(id);
+        return ResponseEntity.ok("Tarea eliminada correctamente");
+    }
+
+    private boolean isValidTask(Task task) {
+        return task != null &&
+                task.getTitle() != null && !task.getTitle().trim().isEmpty() &&
+                task.getDescription() != null && !task.getDescription().trim().isEmpty();
     }
 }

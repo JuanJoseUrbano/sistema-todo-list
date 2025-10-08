@@ -7,33 +7,38 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/tasks")
 public class TaskController {
+
     @Autowired
     private TaskService taskService;
 
     @GetMapping
-    public List<Task> getTasks() {
-        return taskService.getTask();
+    public ResponseEntity<List<Task>> getAllTasks() {
+        return taskService.getAllTasks();
     }
 
     @GetMapping("/{id}")
-    public Optional<Task> getTaskById(@PathVariable Long id) {
+    public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
         return taskService.getById(id);
     }
 
     @GetMapping("/completed")
-    public List<Task> getTaksCompleted(){
-        return taskService.getByComplete();
+    public ResponseEntity<List<Task>> getCompletedTasks() {
+        return taskService.getCompletedTasks();
     }
 
     @GetMapping("/title")
-    public List<Task> getTaskByTitle(@RequestParam String title) {
-        return taskService.getTaskByTitle(title);
+    public ResponseEntity<List<Task>> getTasksByTitle(@RequestParam String title) {
+        return taskService.getTasksByTitle(title);
+    }
+
+    @GetMapping("/priority/{priorityId}")
+    public ResponseEntity<List<Task>> getTasksByPriority(@PathVariable Long priorityId) {
+        return taskService.getTasksByPriority(priorityId);
     }
 
     @PostMapping
@@ -48,6 +53,6 @@ public class TaskController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteTask(@PathVariable Long id) {
-        return taskService.eliminarTask(id);
+        return taskService.deleteTask(id);
     }
 }

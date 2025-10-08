@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface TaskRepository extends CrudRepository<Task,Long> {
     @Query("SELECT t FROM Task t WHERE t.title LIKE %:title%")
-    public List<Task> findByTitle(String title);
-    public List<Task> findByCompleted(boolean completed);
+    List<Task> findByTitle(String title);
+    List<Task> findByCompleted(boolean completed);
+    List<Task> findByPriorityId(Long priorityId);
 }
