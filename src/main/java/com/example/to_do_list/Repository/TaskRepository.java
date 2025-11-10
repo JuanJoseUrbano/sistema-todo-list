@@ -1,14 +1,17 @@
 package com.example.to_do_list.Repository;
 
 import com.example.to_do_list.Entity.Task;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
-public interface TaskRepository extends CrudRepository<Task,Long> {
+@Repository
+public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.title LIKE %:title%")
-    List<Task> findByTitle(String title);
-    List<Task> findByCompleted(boolean completed);
-    List<Task> findByPriorityId(Long priorityId);
+    Page<Task> findByTitle(String title, Pageable pageable);
+    Page<Task> findByCompleted(boolean status, Pageable pageable);
+    Page<Task> findByPriorityId(Long priorityId, Pageable pageable);
 }

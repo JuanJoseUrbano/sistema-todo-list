@@ -50,9 +50,4 @@ public class PriorityController {
     public ResponseEntity<String> deletePriority(@PathVariable Long id) {
         return priorityService.deletePriority(id);
     }
-
-    @GetMapping("/default")
-    public ResponseEntity<List<Priority>> getDefaultPriorities() {
-        return priorityService.getDefaultPriorities();
-    }
 }

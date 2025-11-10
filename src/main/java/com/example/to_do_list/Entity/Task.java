@@ -18,6 +18,7 @@ public class Task {
     @Column(nullable = false)
     private String title;
 
+    @Column(name = "description", length = 150)
     private String description;
 
     @Column(nullable = false)
